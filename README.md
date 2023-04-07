@@ -1,6 +1,6 @@
 # app-state
 
-App states for rust.
+Thread-safe, mutable application states for rust.
 
 ## Usage
 ```rust
