@@ -3,6 +3,21 @@ use std::ops::Deref;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 /// A mutable app state.
+///
+/// # Examples
+/// ```rust
+/// use app_state::{MutAppState, stateful};
+///
+/// struct MyState {
+///   counter: u32,
+/// }
+///
+/// #[stateful]
+/// fn func(state: MutAppState<MyState>) {
+///   let mut state = state.get_mut();
+///   state.counter += 1;
+/// }
+/// ```
 pub struct MutAppState<T: ?Sized>(Arc<Mutex<T>>);
 
 impl<T: 'static + Send> MutAppState<T> {

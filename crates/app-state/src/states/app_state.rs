@@ -2,6 +2,22 @@ use crate::states::{find_state, insert_state};
 use std::ops::Deref;
 use std::sync::Arc;
 
+/// A thread-safe, read-only state container.
+///
+/// # Examples
+/// ```rust
+/// use app_state::{AppState, stateful};
+///
+/// struct MyState {
+///   counter: u32,
+/// }
+///
+/// #[stateful]
+/// fn func(state: AppState<MyState>) {
+///   let state = state.get_ref();
+///   println!("Counter: {}", state.counter);
+/// }
+/// ```
 pub struct AppState<T: ?Sized>(Arc<T>);
 
 trait GetAppState<T: 'static> {
