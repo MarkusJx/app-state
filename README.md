@@ -4,7 +4,7 @@ App states for rust.
 
 ## Usage
 ```rust
-use app_state::{stateful, AppState, InitAppState, InitMutAppState, MutAppState};
+use app_state::{stateful, AppState, InitAppState, InitMutAppState, MutAppState, MutAppStateLock};
 
 #[derive(InitMutAppState)]
 struct MutState {
@@ -27,6 +27,12 @@ fn check_mut_state(state: MutAppState<MutState>) {
 }
 
 #[stateful]
+fn with_lock(mut state: MutAppStateLock<MutState>) {
+    state.name = "Changed1".to_string();
+    assert_eq!(state.name, "Changed1".to_string());
+}
+
+#[stateful]
 fn check_state(state: AppState<State>) {
     assert_eq!(state.name, "Hello".to_string());
 }
@@ -44,5 +50,6 @@ fn main() {
     change_name();
     check_mut_state();
     check_state();
+    with_lock();
 }
 ```

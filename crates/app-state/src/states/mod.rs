@@ -31,5 +31,6 @@ fn find_state<T: 'static + Clone>() -> T {
 }
 
 pub mod app_state;
+pub mod mut_app_state_lock;
 pub mod mutable_app_state;
 pub mod traits;

@@ -1,6 +1,7 @@
 use crate::states::{find_state, insert_state};
 use std::ops::Deref;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex};
+use crate::MutAppStateLock;
 
 /// A mutable app state.
 ///
@@ -32,14 +33,14 @@ impl<T: 'static + Send> MutAppState<T> {
     pub fn get() -> MutAppState<T> {
         find_state()
     }
+
+    /// Returns reference to inner `T`.
+    pub fn get_mut(&self) -> MutAppStateLock<T> {
+        MutAppStateLock::new(&self)
+    }
 }
 
 impl<T: ?Sized> MutAppState<T> {
-    /// Returns reference to inner `T`.
-    pub fn get_mut(&self) -> MutexGuard<'_, T> {
-        self.0.lock().unwrap()
-    }
-
     /// Unwraps to the internal `Arc<T>`
     pub fn into_inner(self) -> Arc<Mutex<T>> {
         self.0

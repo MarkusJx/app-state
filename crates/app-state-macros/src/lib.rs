@@ -5,6 +5,7 @@ use proc_macro::TokenStream as RawStream;
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::error::Error;
+use syn::PathSegment;
 
 /// Derive macro for `InitAppState`.
 /// Allows you to initialize app states with `init_app_state`.
@@ -78,15 +79,19 @@ pub fn init_mut_app_state(input: RawStream) -> RawStream {
 ///
 /// struct SomeState;
 /// struct SomeMutState;
+/// struct SomeOtherState;
 ///
 /// #[stateful]
-/// fn foo(app_state: AppState<SomeState>, mut_app_state: MutAppState<SomeMutState>) {
+/// fn foo(app_state: AppState<SomeState>,
+///        mut_app_state: MutAppState<SomeMutState>,
+///        mut other_state: MutAppStateLock<SomeOtherState>) {
 ///     // ...
 /// }
 ///
 /// fn main() {
 ///    AppState::init(SomeState);
 ///    MutAppState::init(SomeMutState);
+///    MutAppState::init(SomeOtherState);
 ///
 ///    foo();
 /// }
@@ -96,9 +101,43 @@ pub fn stateful(_args: RawStream, input: RawStream) -> RawStream {
     expand(input.into()).unwrap().to_token_stream().into()
 }
 
+#[derive(Eq, PartialEq)]
+enum StateIdent {
+    AppState,
+    MutAppState,
+    MutAppStateLock { is_mut: bool },
+}
+
+impl StateIdent {
+    pub fn new(segment: &PathSegment, pat: &Box<syn::Pat>) -> Self {
+        match segment.ident.to_string().as_str() {
+            "AppState" => StateIdent::AppState,
+            "MutAppState" => StateIdent::MutAppState,
+            "MutAppStateLock" => {
+                let is_mut = if let syn::Pat::Ident(ident) = &**pat {
+                    ident.mutability.is_some()
+                } else {
+                    false
+                };
+
+                StateIdent::MutAppStateLock { is_mut }
+            }
+            _ => panic!("Invalid state type"),
+        }
+    }
+
+    pub fn to_token_stream(&self) -> TokenStream {
+        match self {
+            StateIdent::AppState => quote! { AppState },
+            StateIdent::MutAppState => quote! { MutAppState },
+            StateIdent::MutAppStateLock { .. } => quote! { MutAppStateLock },
+        }
+    }
+}
+
 fn get_type(
     input: &syn::FnArg,
-) -> Result<Option<(TokenStream, TokenStream, TokenStream)>, Box<dyn Error>> {
+) -> Result<Option<(TokenStream, StateIdent, TokenStream)>, Box<dyn Error>> {
     if let syn::FnArg::Typed(typed) = input {
         let name = if let syn::Pat::Ident(ident) = &*typed.pat {
             ident.ident.to_string().parse::<TokenStream>()?
@@ -108,8 +147,11 @@ fn get_type(
 
         if let syn::Type::Path(path) = &*typed.ty {
             for segment in &path.path.segments {
-                if segment.ident == "AppState" || segment.ident == "MutAppState" {
-                    let state_type = segment.ident.to_string().parse::<TokenStream>()?;
+                if segment.ident == "AppState"
+                    || segment.ident == "MutAppState"
+                    || segment.ident == "MutAppStateLock"
+                {
+                    let state_type = StateIdent::new(segment, &typed.pat);
                     if let syn::PathArguments::AngleBracketed(args) = &segment.arguments {
                         for arg in &args.args {
                             if let syn::GenericArgument::Type(syn::Type::Path(path)) = arg {
@@ -154,9 +196,26 @@ fn expand(input: TokenStream) -> Result<TokenStream, Box<dyn Error>> {
 
         let mut statements = Vec::new();
         for (var_name, state_type, type_name) in states {
-            statements.push(syn::parse2::<syn::Stmt>(quote! {
-                let #var_name = #state_type::<#type_name>::get();
-            })?);
+            if let StateIdent::MutAppStateLock { is_mut } = state_type {
+                statements.push(syn::parse2::<syn::Stmt>(quote! {
+                    let #var_name = MutAppState::<#type_name>::get();
+                })?);
+
+                if is_mut {
+                    statements.push(syn::parse2::<syn::Stmt>(quote! {
+                        let mut #var_name = MutAppStateLock::new(&#var_name);
+                    })?);
+                } else {
+                    statements.push(syn::parse2::<syn::Stmt>(quote! {
+                        let #var_name = MutAppStateLock::new(&#var_name);
+                    })?);
+                }
+            } else {
+                let state_type = state_type.to_token_stream();
+                statements.push(syn::parse2::<syn::Stmt>(quote! {
+                    let #var_name = #state_type::<#type_name>::get();
+                })?);
+            }
         }
 
         statements.append(&mut item.block.stmts);
