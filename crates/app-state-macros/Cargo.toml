@@ -2,9 +2,11 @@
 name = "app-state-macros"
 version = "0.1.0"
 authors = ["MarkusJx <28785953+MarkusJx@users.noreply.github.com>"]
-description = "A `cargo generate` template for quick-starting a procedural macro crate"
-keywords = ["template", "proc_macro", "procmacro"]
-edition = "2018"
+description = "Macros for the app-state crate"
+keywords = ["proc_macro", "procmacro"]
+license-file = "../../LICENSE"
+repository = "https://github.com/MarkusJx/app-state"
+edition = "2021"
 
 [lib]
 proc-macro = true
