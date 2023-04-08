@@ -8,7 +8,7 @@
 //! and use independent values, even if they are of the same type.
 //!
 //! ```rust
-//! use app_state::{AppState, MutAppState};
+//! use app_state::{AppState, MutAppState, AppStateTrait};
 //!
 //! struct MyState {
 //!  counter: u32,
@@ -28,7 +28,7 @@
 //! and `init_mut_app_state` methods respectively which can be used to initialize
 //! the state more easily.
 //! ```rust
-//! use app_state::{AppState, MutAppState, InitAppState, InitMutAppState};
+//! use app_state::{AppState, MutAppState, AppStateTrait, InitAppState, InitMutAppState};
 //!
 //! #[derive(Default, InitAppState, InitMutAppState)]
 //! struct MyState {
@@ -44,7 +44,7 @@
 //! ## Read-only state
 //! App states internally use `Arc` to allow for thread-safe access.
 //! ```rust
-//! use app_state::{AppState, stateful};
+//! use app_state::{AppState, AppStateTrait, stateful};
 //!
 //! struct MyState {
 //!   counter: u32,
@@ -61,7 +61,7 @@
 //! This means that when reading from or writing to the state, the mutex must be locked.
 //! This can be done either by calling `get_mut()` or by using the `MutAppStateLock` type.
 //! ```rust
-//! use app_state::{MutAppState, stateful};
+//! use app_state::{MutAppState, AppStateTrait, stateful};
 //!
 //! struct MyState {
 //!   counter: u32,
@@ -78,7 +78,7 @@
 //! In order to mutate the state, you must first lock it.
 //! This can be done either by calling `get_mut()` or by using the `MutAppStateLock` type.
 //! ```rust
-//! use app_state::{MutAppState, MutAppStateLock, stateful};
+//! use app_state::{MutAppState, MutAppStateLock, AppStateTrait, stateful};
 //!
 //! struct MyState {
 //!   counter: u32,
@@ -92,8 +92,8 @@
 //!
 //! ## Get the state manually
 //! You can also get the state manually by calling `AppState::get()` or `MutAppState::get()`.
-//! ```rust
-//! use app_state::{AppState, MutAppState};
+//! ```no_run
+//! use app_state::{AppState, MutAppState, AppStateTrait};
 //!
 //! struct MyState {
 //!   counter: u32,
@@ -103,8 +103,12 @@
 //!   let state = AppState::<MyState>::get();
 //!   let mut_state = MutAppState::<MyState>::get();
 //! }
+//! ```
 
 mod states;
+
+#[cfg(test)]
+mod tests;
 
 pub use crate::states::app_state::*;
 pub use crate::states::mut_app_state_lock::*;

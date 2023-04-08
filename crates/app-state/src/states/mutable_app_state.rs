@@ -1,13 +1,13 @@
-use crate::states::{find_state, insert_state};
+use crate::states::traits::CreateAppState;
+use crate::{AppStateTrait, MutAppStateLock};
 use std::ops::Deref;
 use std::sync::{Arc, Mutex};
-use crate::MutAppStateLock;
 
 /// A mutable app state.
 ///
 /// # Examples
 /// ```rust
-/// use app_state::{MutAppState, stateful};
+/// use app_state::{MutAppState, AppStateTrait, stateful};
 ///
 /// struct MyState {
 ///   counter: u32,
@@ -22,23 +22,19 @@ use crate::MutAppStateLock;
 pub struct MutAppState<T: ?Sized>(Arc<Mutex<T>>);
 
 impl<T: 'static + Send> MutAppState<T> {
-    fn new(state: T) -> MutAppState<T> {
-        MutAppState(Arc::new(Mutex::new(state)))
-    }
-
-    pub fn init(state: T) {
-        insert_state(MutAppState::new(state));
-    }
-
-    pub fn get() -> MutAppState<T> {
-        find_state()
-    }
-
     /// Returns reference to inner `T`.
     pub fn get_mut(&self) -> MutAppStateLock<T> {
         MutAppStateLock::new(&self)
     }
 }
+
+impl<T: 'static + Send> CreateAppState<T> for MutAppState<T> {
+    fn new(state: T) -> MutAppState<T> {
+        MutAppState(Arc::new(Mutex::new(state)))
+    }
+}
+
+impl<T: 'static + Send> AppStateTrait<T, MutAppState<T>> for MutAppState<T> {}
 
 impl<T: ?Sized> MutAppState<T> {
     /// Unwraps to the internal `Arc<T>`

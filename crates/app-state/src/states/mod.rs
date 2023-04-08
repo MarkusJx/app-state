@@ -1,33 +1,35 @@
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
+use std::error::Error;
 use std::sync::Mutex;
 
 static STATE: Mutex<Option<HashMap<TypeId, Box<dyn Any + Send>>>> = Mutex::new(None);
 
 fn insert_state<T: 'static + Clone + Send>(state: T) {
-    let mut st = STATE.lock().unwrap();
-    if st.is_none() {
-        *st = Some(HashMap::new());
-    }
-
-    let st = st.as_mut().unwrap();
-    st.insert(TypeId::of::<T>(), Box::new(state));
+    let mut guard = STATE.lock().unwrap();
+    guard
+        .get_or_insert(HashMap::new())
+        .insert(TypeId::of::<T>(), Box::new(state));
 }
 
-fn find_state<T: 'static + Clone>() -> T {
+fn find_state<T: 'static + Clone>() -> Result<T, Box<dyn Error>> {
     let state = STATE.lock().unwrap();
-    state
+    Ok(state
         .as_ref()
-        .or_else(|| panic!("The state store has not yet been initialized"))
-        .unwrap()
+        .ok_or("The state store has not yet been initialized")?
         .clone()
         .get(&TypeId::of::<T>())
-        .or_else(|| panic!("Could not find requested state"))
-        .unwrap()
+        .ok_or("Could not find requested state")?
         .downcast_ref::<T>()
-        .or_else(|| panic!("Could not cast to requested state"))
-        .unwrap()
-        .clone()
+        .ok_or("Could not cast to requested state")?
+        .clone())
+}
+
+fn find_state_unwrap<T: 'static + Clone>() -> T {
+    match find_state::<T>() {
+        Ok(state) => state,
+        Err(err) => panic!("{}", err),
+    }
 }
 
 pub mod app_state;

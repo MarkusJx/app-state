@@ -1,4 +1,6 @@
-use app_state::{stateful, AppState, InitAppState, InitMutAppState, MutAppState, MutAppStateLock};
+use app_state::{
+    stateful, AppState, AppStateTrait, InitAppState, InitMutAppState, MutAppState, MutAppStateLock,
+};
 
 #[derive(InitMutAppState)]
 struct MutState {

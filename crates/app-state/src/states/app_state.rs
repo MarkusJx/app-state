@@ -1,4 +1,5 @@
-use crate::states::{find_state, insert_state};
+use crate::states::traits::CreateAppState;
+use crate::AppStateTrait;
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -6,7 +7,7 @@ use std::sync::Arc;
 ///
 /// # Examples
 /// ```rust
-/// use app_state::{AppState, stateful};
+/// use app_state::{AppState, AppStateTrait, stateful};
 ///
 /// struct MyState {
 ///   counter: u32,
@@ -20,32 +21,13 @@ use std::sync::Arc;
 /// ```
 pub struct AppState<T: ?Sized>(Arc<T>);
 
-trait GetAppState<T: 'static> {
-    fn get() -> AppState<T> {
-        find_state()
-    }
-}
-
-impl<T: 'static + Send + Sync> AppState<T> {
+impl<T: 'static + Send> CreateAppState<T> for AppState<T> {
     fn new(state: T) -> AppState<T> {
         AppState(Arc::new(state))
     }
-
-    pub fn init(state: T) {
-        insert_state(AppState::new(state));
-    }
-
-    pub fn get() -> AppState<T> {
-        find_state()
-    }
 }
 
-impl<T: 'static + Send + Sync + Default> GetAppState<T> for AppState<T> {
-    fn get() -> AppState<T> {
-        println!("GetAppState::get() called");
-        find_state()
-    }
-}
+impl<T: 'static + Send + Sync> AppStateTrait<T, AppState<T>> for AppState<T> {}
 
 impl<T: ?Sized> AppState<T> {
     /// Returns reference to inner `T`.
