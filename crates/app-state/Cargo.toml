@@ -8,4 +8,4 @@ license-file = "../../LICENSE"
 edition = "2021"
 
 [dependencies]
-app-state-macros = { path = "../app-state-macros", version = "0.1.0" }
+app-state-macros = { path = "../app-state-macros", version = "0" }

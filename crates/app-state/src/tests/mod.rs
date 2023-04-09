@@ -1,2 +1,5 @@
-mod injection_tests;
-mod manual_tests;
+mod lock;
+mod mutable;
+mod readonly;
+mod util;
+mod init_tests;

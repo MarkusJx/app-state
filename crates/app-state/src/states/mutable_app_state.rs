@@ -19,6 +19,7 @@ use std::sync::{Arc, Mutex};
 ///   state.counter += 1;
 /// }
 /// ```
+#[derive(Debug)]
 pub struct MutAppState<T: ?Sized>(Arc<Mutex<T>>);
 
 impl<T: 'static + Send> MutAppState<T> {
@@ -53,7 +54,7 @@ impl<T: ?Sized> Deref for MutAppState<T> {
 
 impl<T: ?Sized> Clone for MutAppState<T> {
     fn clone(&self) -> MutAppState<T> {
-        MutAppState(Arc::clone(&self.0))
+        MutAppState(self.0.clone())
     }
 }
 
