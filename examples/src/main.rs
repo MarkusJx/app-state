@@ -1,6 +1,8 @@
 use app_state::{
-    stateful, AppState, AppStateTrait, InitAppState, InitMutAppState, MutAppState, MutAppStateLock,
+    init_default_mut_state, init_default_state, stateful, AppState, AppStateTrait, InitAppState,
+    InitMutAppState, MutAppState, MutAppStateLock,
 };
+use std::ops::Deref;
 
 #[derive(InitMutAppState)]
 struct MutState {
@@ -10,6 +12,18 @@ struct MutState {
 #[derive(InitAppState)]
 struct State {
     name: String,
+}
+
+#[init_default_state]
+#[derive(Default, Debug)]
+struct State2 {
+    _name: String,
+}
+
+#[init_default_mut_state]
+#[derive(Default, Debug)]
+struct MutState2 {
+    _name: String,
 }
 
 #[stateful]
@@ -34,6 +48,11 @@ fn check_state(state: AppState<State>) {
 }
 
 fn main() {
+    let state2 = AppState::<State2>::get();
+    println!("{:?}", state2.get_ref());
+    let mut_state2 = MutAppState::<MutState2>::get();
+    println!("{:?}", mut_state2.get_mut().deref());
+
     MutState {
         name: "Hello".to_string(),
     }

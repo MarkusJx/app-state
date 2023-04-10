@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 app-state = { path = "../crates/app-state" }
+ctor = "0.2.0"

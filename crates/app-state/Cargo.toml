@@ -9,3 +9,6 @@ edition = "2021"
 
 [dependencies]
 app-state-macros = { path = "../app-state-macros", version = "0" }
+
+[dev-dependencies]
+ctor = "0"
