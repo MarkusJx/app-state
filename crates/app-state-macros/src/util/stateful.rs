@@ -1,7 +1,7 @@
+use crate::util::path::PathAttr;
 use crate::util::util::is_mut;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use std::error::Error;
 use syn::PathSegment;
 
 #[derive(Eq, PartialEq)]
@@ -32,7 +32,7 @@ impl StateIdent {
 
 fn get_type(
     input: &syn::FnArg,
-) -> Result<Option<(TokenStream, StateIdent, TokenStream, TokenStream)>, Box<dyn Error>> {
+) -> Result<Option<(TokenStream, StateIdent, TokenStream, TokenStream)>, syn::Error> {
     if let syn::FnArg::Typed(typed) = input {
         let name = if let syn::Pat::Ident(ident) = &*typed.pat {
             ident.ident.to_string().parse::<TokenStream>()?
@@ -69,7 +69,17 @@ fn get_type(
     Ok(None)
 }
 
-pub(crate) fn expand_stateful(input: TokenStream) -> Result<TokenStream, Box<dyn Error>> {
+fn is_default(args: &PathAttr, name: &TokenStream) -> bool {
+    args.default
+        .as_ref()
+        .map(|d| d.iter().any(|x| x.to_string() == name.to_string()))
+        .unwrap_or(false)
+}
+
+pub(crate) fn expand_stateful(
+    input: TokenStream,
+    args: PathAttr,
+) -> Result<TokenStream, syn::Error> {
     let mut item = syn::parse2::<syn::Item>(input)?;
 
     if let syn::Item::Fn(ref mut item) = item {
@@ -78,7 +88,7 @@ pub(crate) fn expand_stateful(input: TokenStream) -> Result<TokenStream, Box<dyn
             .inputs
             .iter()
             .map(|input| get_type(&input))
-            .collect::<Result<Vec<_>, Box<dyn Error>>>()?
+            .collect::<Result<Vec<_>, syn::Error>>()?
             .into_iter()
             .filter_map(|x| x)
             .collect::<Vec<_>>();
@@ -89,17 +99,38 @@ pub(crate) fn expand_stateful(input: TokenStream) -> Result<TokenStream, Box<dyn
             .clone()
             .into_iter()
             .map(|input| get_type(&input).map(|x| (input, x)))
-            .collect::<Result<Vec<_>, Box<dyn Error>>>()?
+            .collect::<Result<Vec<_>, syn::Error>>()?
             .into_iter()
             .filter(|x| x.1.is_none())
             .map(|x| x.0)
             .collect::<_>();
+
+        // Check if all arguments marked as default are present
+        if let Some(not_found) = args.default.as_ref().and_then(|d| {
+            d.iter()
+                .find(|e1| !states.iter().any(|e2| e1.to_string() == e2.0.to_string()))
+        }) {
+            return Err(syn::Error::new(
+                not_found.span(),
+                format!(
+                    "Argument named '{}' not found",
+                    not_found.to_token_stream().to_string()
+                ),
+            )
+            .into());
+        }
 
         let mut statements = Vec::new();
         for (var_name, state_type, type_name, is_mut) in states {
             let state_type_tokens = state_type.to_token_stream();
 
             if state_type == StateIdent::MutAppStateLock {
+                if is_default(&args, &var_name) {
+                    statements.push(syn::parse2::<syn::Stmt>(quote! {
+                        MutAppState::init_if_not_exists(#type_name::default);
+                    })?);
+                }
+
                 statements.push(syn::parse2::<syn::Stmt>(quote! {
                     let #var_name = MutAppState::<#type_name>::get();
                 })?);
@@ -108,6 +139,12 @@ pub(crate) fn expand_stateful(input: TokenStream) -> Result<TokenStream, Box<dyn
                     let #is_mut #var_name = MutAppStateLock::new(&#var_name);
                 })?);
             } else {
+                if is_default(&args, &var_name) {
+                    statements.push(syn::parse2::<syn::Stmt>(quote! {
+                        #state_type_tokens::init_if_not_exists(#type_name::default);
+                    })?);
+                }
+
                 statements.push(syn::parse2::<syn::Stmt>(quote! {
                     let #is_mut #var_name = #state_type_tokens::<#type_name>::get();
                 })?);

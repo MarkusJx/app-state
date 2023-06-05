@@ -2,10 +2,11 @@ mod util;
 
 extern crate proc_macro;
 
+use crate::util::path::PathAttr;
 use crate::util::stateful::expand_stateful;
 use proc_macro::TokenStream as RawStream;
 use proc_macro2::Ident;
-use quote::{quote, ToTokens};
+use quote::quote;
 use rand::Rng;
 use syn::DeriveInput;
 
@@ -75,7 +76,14 @@ pub fn init_mut_app_state(input: RawStream) -> RawStream {
 
 /// Inject app states into the annotated function.
 ///
-/// # Example
+/// # Arguments
+/// ## `default`
+/// A list of argument names to initialize to their default values
+/// if they are not already initialized. This requires
+/// the specified states to implement `Default`.
+///
+/// # Examples
+/// ## Injecting multiple states
 /// ```no_run
 /// use app_state::{AppState, MutAppState, stateful};
 ///
@@ -98,12 +106,39 @@ pub fn init_mut_app_state(input: RawStream) -> RawStream {
 ///   foo();
 /// }
 /// ```
+///
+/// ## Injecting states with default values
+/// ```no_run
+/// use app_state::{AppState, MutAppState, stateful};
+///
+/// #[derive(Default)]
+/// struct SomeState;
+/// #[derive(Default)]
+/// struct SomeMutState;
+/// #[derive(Default)]
+/// struct SomeOtherState;
+///
+/// #[stateful(default(app_state, mut_app_state, other_state))]
+/// fn foo(app_state: AppState<SomeState>,
+///   mut_app_state: MutAppState<SomeMutState>,
+///   mut other_state: MutAppStateLock<SomeOtherState>) {
+///   // ...
+/// }
+///
+/// fn main() {
+///   // All states will be initialized with their default values
+///   // if they are not already initialized.
+///   foo();
+/// }
+/// ```
 #[proc_macro_attribute]
-pub fn stateful(_args: RawStream, input: RawStream) -> RawStream {
-    expand_stateful(input.into())
-        .unwrap()
-        .to_token_stream()
-        .into()
+pub fn stateful(args: RawStream, input: RawStream) -> RawStream {
+    let args = syn::parse_macro_input!(args as PathAttr);
+
+    match expand_stateful(input.into(), args) {
+        Ok(stream) => stream.into(),
+        Err(err) => err.to_compile_error().into(),
+    }
 }
 
 fn get_default_state_values(input: DeriveInput) -> (Ident, Ident) {

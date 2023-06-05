@@ -5,6 +5,14 @@ use std::sync::Mutex;
 
 static STATE: Mutex<Option<HashMap<TypeId, Box<dyn Any + Send>>>> = Mutex::new(None);
 
+fn insert_state_if_not_exists<T: 'static + Clone + Send, F: FnOnce() -> T>(state: F) {
+    let mut guard = STATE.lock().unwrap();
+    guard
+        .get_or_insert(HashMap::new())
+        .entry(TypeId::of::<T>())
+        .or_insert_with(|| Box::new(state()));
+}
+
 fn insert_state<T: 'static + Clone + Send>(state: T) {
     let mut guard = STATE.lock().unwrap();
     guard

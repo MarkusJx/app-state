@@ -26,6 +26,18 @@ struct MutState2 {
     _name: String,
 }
 
+struct CreatableState {
+    name: String,
+}
+
+impl Default for CreatableState {
+    fn default() -> Self {
+        Self {
+            name: "Hello".to_string(),
+        }
+    }
+}
+
 #[stateful]
 fn change_name(state: MutAppState<MutState>) {
     state.get_mut().name = "Changed".to_string();
@@ -44,6 +56,11 @@ fn with_lock(mut state: MutAppStateLock<MutState>) {
 
 #[stateful]
 fn check_state(state: AppState<State>) {
+    assert_eq!(state.name, "Hello".to_string());
+}
+
+#[stateful(default(state))]
+fn check_creatable_state(state: AppState<CreatableState>) {
     assert_eq!(state.name, "Hello".to_string());
 }
 
@@ -66,4 +83,5 @@ fn main() {
     check_mut_state();
     check_state();
     with_lock();
+    check_creatable_state();
 }

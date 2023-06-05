@@ -21,6 +21,33 @@ macro_rules! create_state {
     };
 }
 
+#[macro_export]
+macro_rules! create_creatable_state {
+    () => {
+        struct State {
+            name: String,
+        }
+
+        impl StateTrait for State {
+            fn get_name(&self) -> &str {
+                self.name.as_str()
+            }
+
+            fn set_name(&mut self, name: &str) {
+                self.name = name.to_string();
+            }
+        }
+
+        impl Default for State {
+            fn default() -> Self {
+                Self {
+                    name: "Hello".to_string(),
+                }
+            }
+        }
+    };
+}
+
 pub(crate) trait StateTrait: Send + Sync + 'static {
     fn get_name(&self) -> &str;
 
