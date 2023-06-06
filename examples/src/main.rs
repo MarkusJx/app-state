@@ -95,6 +95,13 @@ fn with_generic<T: GetName>(state: AppState<T>) {
     assert_eq!(state.get_ref().get_name(), "Hello".to_string());
 }
 
+struct Test {}
+
+impl Test {
+    #[stateful]
+    fn test_fn(&self, _: String, _state: AppState<State>) {}
+}
+
 fn main() {
     let state2 = AppState::<State2>::get();
     assert_eq!(state2.get_ref().name, "".to_string());
@@ -111,6 +118,7 @@ fn main() {
     .init_app_state();
 
     with_generic::<State>();
+    Test {}.test_fn("".to_string());
 
     change_name();
     check_mut_state();

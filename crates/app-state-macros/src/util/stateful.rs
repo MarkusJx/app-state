@@ -2,8 +2,9 @@ use crate::util::path::PathAttr;
 use crate::util::util::is_mut;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
+use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use syn::PathSegment;
+use syn::{FnArg, PathSegment, Token, Type};
 
 #[derive(Eq, PartialEq)]
 enum StateIdent {
@@ -32,16 +33,16 @@ impl StateIdent {
 }
 
 fn get_type(
-    input: &syn::FnArg,
+    input: &FnArg,
 ) -> syn::Result<Option<(TokenStream, StateIdent, TokenStream, TokenStream)>> {
-    if let syn::FnArg::Typed(typed) = input {
+    if let FnArg::Typed(typed) = input {
         let name = if let syn::Pat::Ident(ident) = &*typed.pat {
             ident.ident.to_string().parse::<TokenStream>()?
         } else {
             return Ok(None);
         };
 
-        if let syn::Type::Path(path) = &*typed.ty {
+        if let Type::Path(path) = &*typed.ty {
             for segment in &path.path.segments {
                 if segment.ident == "AppState"
                     || segment.ident == "MutAppState"
@@ -56,7 +57,7 @@ fn get_type(
 
                     if let syn::PathArguments::AngleBracketed(args) = &segment.arguments {
                         for arg in &args.args {
-                            if let syn::GenericArgument::Type(syn::Type::Path(path)) = arg {
+                            if let syn::GenericArgument::Type(Type::Path(path)) = arg {
                                 let ident = path.path.segments[0].ident.to_string().parse()?;
                                 return Ok(Some((name, state_type, ident, is_mut)));
                             }
@@ -75,6 +76,23 @@ fn should_init(args: &PathAttr, name: &TokenStream) -> bool {
         .as_ref()
         .map(|d| d.iter().any(|x| x.to_string() == name.to_string()))
         .unwrap_or(false)
+}
+
+#[cfg(feature = "log")]
+fn references_self(inputs: &Punctuated<FnArg, Token![,]>) -> bool {
+    inputs.iter().any(|i| {
+        if let FnArg::Receiver(r) = i {
+            if let Type::Reference(r) = r.ty.as_ref() {
+                if let Type::Path(p) = r.elem.as_ref() {
+                    if let Some(ident) = p.path.get_ident() {
+                        return ident.to_string() == "Self";
+                    }
+                }
+            }
+        }
+
+        false
+    })
 }
 
 pub(crate) fn expand_stateful(input: TokenStream, args: PathAttr) -> syn::Result<TokenStream> {
@@ -141,6 +159,12 @@ pub(crate) fn expand_stateful(input: TokenStream, args: PathAttr) -> syn::Result
                     .parse::<TokenStream>()?;
 
                 quote! { #fn_name::<#params> }
+            };
+
+            let function_name = if references_self(&item.sig.inputs) {
+                quote! { Self::#function_name }
+            } else {
+                function_name
             };
 
             quote! {
