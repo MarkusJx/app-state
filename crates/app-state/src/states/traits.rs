@@ -67,11 +67,51 @@ where
         });
     }
 
+    /// Returns a reference to the state.
+    /// If the state store has not been initialized, this will panic.
     fn get() -> U {
         find_state_unwrap()
     }
 
+    /// Returns a reference to the state.
+    /// If the state store has not been initialized, this will return `Err`.
     fn try_get() -> Result<U, Box<dyn Error>> {
         find_state()
+    }
+
+    /// Returns a reference to the state.
+    /// Inserts the supplied value if the state store has not been initialized.
+    fn get_or_insert(val: T) -> U {
+        insert_state_if_not_exists(|| {
+            #[cfg(feature = "log")]
+            log::debug!("Initializing state {}", std::any::type_name::<T>());
+
+            U::new(val)
+        })
+    }
+
+    /// Returns a reference to the state.
+    /// Inserts the supplied value if the state store has not been initialized.
+    fn get_or_insert_with<F: FnOnce() -> T>(f: F) -> U {
+        insert_state_if_not_exists(|| {
+            #[cfg(feature = "log")]
+            log::debug!("Initializing state {}", std::any::type_name::<T>());
+
+            U::new(f())
+        })
+    }
+
+    /// Returns a reference to the state.
+    /// Inserts the default value of `T` if the state store has not been initialized.
+    fn get_or_insert_default() -> U
+    where
+        T: Default,
+    {
+        insert_state_if_not_exists(|| {
+            #[cfg(feature = "log")]
+            log::debug!("Initializing state {}", std::any::type_name::<T>());
+
+            U::new(T::default())
+        })
     }
 }

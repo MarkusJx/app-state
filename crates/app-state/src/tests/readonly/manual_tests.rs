@@ -1,5 +1,5 @@
 use crate::tests::util::StateTrait;
-use crate::{create_state, AppState, AppStateTrait};
+use crate::{create_creatable_state, create_state, AppState, AppStateTrait};
 
 struct NonExistentState {}
 
@@ -32,4 +32,28 @@ fn test_try_get_non_existent_state() {
     create_state!(AppState);
     let state = AppState::<NonExistentState>::try_get();
     assert!(state.is_err());
+}
+
+#[test]
+fn test_get_or_insert() {
+    create_creatable_state!();
+
+    let state = AppState::<State>::get_or_insert(State::default());
+    assert_eq!(state.name, "Hello".to_string());
+}
+
+#[test]
+fn test_get_or_insert_with() {
+    create_creatable_state!();
+
+    let state = AppState::<State>::get_or_insert_with(|| State::default());
+    assert_eq!(state.name, "Hello".to_string());
+}
+
+#[test]
+fn test_get_or_insert_default() {
+    create_creatable_state!();
+
+    let state = AppState::<State>::get_or_insert_default();
+    assert_eq!(state.name, "Hello".to_string());
 }

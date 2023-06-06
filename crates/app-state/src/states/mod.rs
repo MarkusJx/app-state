@@ -5,12 +5,16 @@ use std::sync::Mutex;
 
 static STATE: Mutex<Option<HashMap<TypeId, Box<dyn Any + Send>>>> = Mutex::new(None);
 
-fn insert_state_if_not_exists<T: 'static + Clone + Send, F: FnOnce() -> T>(state: F) {
+fn insert_state_if_not_exists<T: 'static + Clone + Send, F: FnOnce() -> T>(state: F) -> T {
     let mut guard = STATE.lock().unwrap();
     guard
         .get_or_insert(HashMap::new())
         .entry(TypeId::of::<T>())
-        .or_insert_with(|| Box::new(state()));
+        .or_insert_with(|| Box::new(state()))
+        .downcast_ref::<T>()
+        .ok_or("Could not cast to requested state")
+        .unwrap()
+        .clone()
 }
 
 fn insert_state<T: 'static + Clone + Send>(state: T) {

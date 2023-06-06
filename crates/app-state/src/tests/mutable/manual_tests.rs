@@ -1,5 +1,5 @@
 use crate::tests::util::StateTrait;
-use crate::{create_state, AppStateTrait, MutAppState};
+use crate::{create_creatable_state, create_state, AppStateTrait, MutAppState};
 
 struct NonExistentState {}
 
@@ -47,4 +47,28 @@ fn test_change_state() {
 
     let state = MutAppState::<State>::get();
     assert_eq!(state.get_mut().name, "Changed".to_string());
+}
+
+#[test]
+fn test_get_or_insert() {
+    create_creatable_state!();
+
+    let state = MutAppState::<State>::get_or_insert(State::default());
+    assert_eq!(state.get_mut().name, "Hello".to_string());
+}
+
+#[test]
+fn test_get_or_insert_with() {
+    create_creatable_state!();
+
+    let state = MutAppState::<State>::get_or_insert_with(|| State::default());
+    assert_eq!(state.get_mut().name, "Hello".to_string());
+}
+
+#[test]
+fn test_get_or_insert_default() {
+    create_creatable_state!();
+
+    let state = MutAppState::<State>::get_or_insert_default();
+    assert_eq!(state.get_mut().name, "Hello".to_string());
 }
