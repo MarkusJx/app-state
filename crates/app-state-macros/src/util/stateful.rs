@@ -183,39 +183,30 @@ pub(crate) fn expand_stateful(input: TokenStream, args: PathAttr) -> syn::Result
                 })?
             };
 
+            let getter = if should_init(&args, &var_name) {
+                #[cfg(feature = "log")]
+                statements.push(log_initializing_state);
+
+                quote! { get_or_insert_default }
+            } else {
+                quote! { get }
+            };
+
             if state_type == StateIdent::MutAppStateLock {
-                if should_init(&args, &var_name) {
-                    #[cfg(feature = "log")]
-                    statements.push(log_initializing_state);
-
-                    statements.push(syn::parse2::<syn::Stmt>(quote! {
-                        MutAppState::init_if_not_exists(#type_name::default);
-                    })?);
-                }
-
                 #[cfg(feature = "log")]
                 statements.push(log_injecting_state);
                 statements.push(syn::parse2::<syn::Stmt>(quote! {
-                    let #var_name = MutAppState::<#type_name>::get();
+                    let #var_name = MutAppState::<#type_name>::#getter();
                 })?);
 
                 statements.push(syn::parse2::<syn::Stmt>(quote! {
                     let #is_mut #var_name = MutAppStateLock::new(&#var_name);
                 })?);
             } else {
-                if should_init(&args, &var_name) {
-                    #[cfg(feature = "log")]
-                    statements.push(log_initializing_state);
-
-                    statements.push(syn::parse2::<syn::Stmt>(quote! {
-                        #state_type_tokens::init_if_not_exists(#type_name::default);
-                    })?);
-                }
-
                 #[cfg(feature = "log")]
                 statements.push(log_injecting_state);
                 statements.push(syn::parse2::<syn::Stmt>(quote! {
-                    let #is_mut #var_name = #state_type_tokens::<#type_name>::get();
+                    let #is_mut #var_name = #state_type_tokens::<#type_name>::#getter();
                 })?);
             }
         }
@@ -229,5 +220,6 @@ pub(crate) fn expand_stateful(input: TokenStream, args: PathAttr) -> syn::Result
         ));
     }
 
+    println!("item: {}", item.to_token_stream().to_string());
     Ok(item.to_token_stream())
 }

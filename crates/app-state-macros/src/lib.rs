@@ -8,6 +8,7 @@ use proc_macro::TokenStream as RawStream;
 use proc_macro2::Ident;
 use quote::quote;
 use rand::Rng;
+use std::env;
 use syn::spanned::Spanned;
 use syn::DeriveInput;
 
@@ -155,7 +156,13 @@ pub fn stateful(args: RawStream, input: RawStream) -> RawStream {
     let args = syn::parse_macro_input!(args as PathAttr);
 
     match expand_stateful(input.into(), args) {
-        Ok(stream) => stream.into(),
+        Ok(stream) => {
+            if env::var("DEBUG_GENERATED_CODE").is_ok() {
+                println!("{}", stream.to_string());
+            }
+
+            stream.into()
+        }
         Err(err) => err.to_compile_error().into(),
     }
 }
