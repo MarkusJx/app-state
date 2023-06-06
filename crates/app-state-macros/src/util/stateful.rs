@@ -119,14 +119,37 @@ pub(crate) fn expand_stateful(input: TokenStream, args: PathAttr) -> syn::Result
         }
 
         #[cfg(feature = "log")]
-        let fn_name = item.sig.ident.clone();
-        #[cfg(feature = "log")]
-        let get_fn_name = quote! {
-            {
-                fn type_name<T>(_: T) -> &'static str {
-                    std::any::type_name::<T>()
+        let get_fn_name = {
+            let fn_name = item.sig.ident.clone();
+            let function_name = if item.sig.generics.params.is_empty() {
+                fn_name.into_token_stream()
+            } else {
+                let params = item
+                    .sig
+                    .generics
+                    .params
+                    .iter()
+                    .map(|p| {
+                        if let syn::GenericParam::Type(t) = p {
+                            Ok(t.ident.to_string())
+                        } else {
+                            Err(syn::Error::new(p.span(), "Unknown generic parameter"))
+                        }
+                    })
+                    .collect::<syn::Result<Vec<_>>>()?
+                    .join(", ")
+                    .parse::<TokenStream>()?;
+
+                quote! { #fn_name::<#params> }
+            };
+
+            quote! {
+                {
+                    fn type_name<T>(_: T) -> &'static str {
+                        std::any::type_name::<T>()
+                    }
+                    type_name(#function_name)
                 }
-                type_name(#fn_name)
             }
         };
 

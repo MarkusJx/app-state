@@ -30,6 +30,16 @@ struct State {
     name: String,
 }
 
+trait GetName: Send + Sync + 'static {
+    fn get_name(&self) -> String;
+}
+
+impl GetName for State {
+    fn get_name(&self) -> String {
+        self.name.clone()
+    }
+}
+
 #[init_default_state]
 #[derive(Default, Debug)]
 struct State2 {
@@ -80,6 +90,11 @@ fn check_creatable_state(state: AppState<CreatableState>) {
     assert_eq!(state.name, "Hello".to_string());
 }
 
+#[stateful]
+fn with_generic<T: GetName>(state: AppState<T>) {
+    assert_eq!(state.get_ref().get_name(), "Hello".to_string());
+}
+
 fn main() {
     let state2 = AppState::<State2>::get();
     assert_eq!(state2.get_ref().name, "".to_string());
@@ -94,6 +109,8 @@ fn main() {
         name: "Hello".to_string(),
     }
     .init_app_state();
+
+    with_generic::<State>();
 
     change_name();
     check_mut_state();
