@@ -220,6 +220,5 @@ pub(crate) fn expand_stateful(input: TokenStream, args: PathAttr) -> syn::Result
         ));
     }
 
-    println!("item: {}", item.to_token_stream().to_string());
     Ok(item.to_token_stream())
 }
