@@ -8,7 +8,7 @@ fn check_state<T: StateTrait>(state: AppState<T>) {
     assert_eq!(state.get_name(), "Hello");
 }
 
-#[stateful(default(state))]
+#[stateful(init(state))]
 fn init_and_check_state<T: StateTrait + Default>(state: AppState<T>) {
     assert_eq!(state.get_name(), "Hello");
 }

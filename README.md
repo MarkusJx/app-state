@@ -57,7 +57,7 @@ fn check_state(state: AppState<State>) {
 
 /// Initializes the state with the default value if
 /// the state is not already initialized.
-#[stateful(default(state))]
+#[stateful(init(state))]
 fn check_creatable_state(state: AppState<CreatableState>) {
     assert_eq!(state.name, "Hello".to_string());
 }

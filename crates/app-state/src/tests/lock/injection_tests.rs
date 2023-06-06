@@ -23,12 +23,12 @@ fn check_mut_state_changed_with_lock<T: StateTrait>(state: MutAppStateLock<T>) {
 #[stateful]
 fn check_mut_non_existent_state_with_lock(_state: MutAppStateLock<NonExistentState>) {}
 
-#[stateful(default(state))]
+#[stateful(init(state))]
 fn init_and_check_state<T: StateTrait + Default>(state: MutAppStateLock<T>) {
     assert_eq!(state.get_name(), "Hello");
 }
 
-#[stateful(default(state))]
+#[stateful(init(state))]
 fn init_check_and_mutate_state<T: StateTrait + Default>(mut state: MutAppStateLock<T>) {
     assert_eq!(state.get_name(), "Hello");
     state.set_name("Changed");

@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-app-state = { path = "../crates/app-state" }
+app-state = { path = "../crates/app-state", features = ["log"] }
 ctor = "0.2.0"
+log = "0.4"
+log4rs = "1.2"

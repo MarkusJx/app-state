@@ -21,12 +21,12 @@ fn check_mut_state_changed<T: StateTrait>(state: MutAppState<T>) {
 #[stateful]
 fn check_mut_non_existent_state(_state: MutAppState<NonExistentState>) {}
 
-#[stateful(default(state))]
+#[stateful(init(state))]
 fn init_and_check_state<T: StateTrait + Default>(state: MutAppState<T>) {
     assert_eq!(state.get_mut().get_name(), "Hello");
 }
 
-#[stateful(default(state))]
+#[stateful(init(state))]
 fn init_check_and_mutate_state<T: StateTrait + Default>(state: MutAppState<T>) {
     assert_eq!(state.get_mut().get_name(), "Hello");
     state.get_mut().set_name("Changed");

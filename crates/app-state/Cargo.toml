@@ -9,6 +9,10 @@ edition = "2021"
 
 [dependencies]
 app-state-macros = { path = "../app-state-macros", version = "0" }
+log = { version = "0.4", optional = true }
 
 [dev-dependencies]
 ctor = "0"
+
+[features]
+log = ["app-state-macros/log", "dep:log"]

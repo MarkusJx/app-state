@@ -35,6 +35,9 @@ where
     /// }
     /// ```
     fn init(state: T) {
+        #[cfg(feature = "log")]
+        log::debug!("Initializing state {}", std::any::type_name::<T>());
+
         insert_state(U::new(state));
     }
 
@@ -56,7 +59,12 @@ where
     /// }
     /// ```
     fn init_if_not_exists<F: FnOnce() -> T>(state: F) {
-        insert_state_if_not_exists(|| U::new(state()));
+        insert_state_if_not_exists(|| {
+            #[cfg(feature = "log")]
+            log::debug!("Initializing state {}", std::any::type_name::<T>());
+
+            U::new(state())
+        });
     }
 
     fn get() -> U {

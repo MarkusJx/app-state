@@ -2,7 +2,23 @@ use app_state::{
     init_default_mut_state, init_default_state, stateful, AppState, AppStateTrait, InitAppState,
     InitMutAppState, MutAppState, MutAppStateLock,
 };
-use std::ops::Deref;
+use log::LevelFilter;
+use log4rs::append::console::ConsoleAppender;
+use log4rs::config::{Appender, Root};
+use log4rs::Config;
+
+#[ctor::ctor]
+fn init_logger() {
+    // Init logging
+    let stdout = ConsoleAppender::builder().build();
+    log4rs::init_config(
+        Config::builder()
+            .appender(Appender::builder().build("stdout", Box::new(stdout)))
+            .build(Root::builder().appender("stdout").build(LevelFilter::Trace))
+            .unwrap(),
+    )
+    .unwrap();
+}
 
 #[derive(InitMutAppState)]
 struct MutState {
@@ -17,13 +33,13 @@ struct State {
 #[init_default_state]
 #[derive(Default, Debug)]
 struct State2 {
-    _name: String,
+    name: String,
 }
 
 #[init_default_mut_state]
 #[derive(Default, Debug)]
 struct MutState2 {
-    _name: String,
+    name: String,
 }
 
 struct CreatableState {
@@ -59,16 +75,16 @@ fn check_state(state: AppState<State>) {
     assert_eq!(state.name, "Hello".to_string());
 }
 
-#[stateful(default(state))]
+#[stateful(init(state))]
 fn check_creatable_state(state: AppState<CreatableState>) {
     assert_eq!(state.name, "Hello".to_string());
 }
 
 fn main() {
     let state2 = AppState::<State2>::get();
-    println!("{:?}", state2.get_ref());
+    assert_eq!(state2.get_ref().name, "".to_string());
     let mut_state2 = MutAppState::<MutState2>::get();
-    println!("{:?}", mut_state2.get_mut().deref());
+    assert_eq!(mut_state2.get_mut().name, "".to_string());
 
     MutState {
         name: "Hello".to_string(),

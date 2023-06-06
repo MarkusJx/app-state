@@ -5,12 +5,12 @@ use syn::{parenthesized, Token};
 
 #[derive(Default, Debug)]
 pub(crate) struct PathAttr {
-    pub(crate) default: Option<Vec<Ident>>,
+    pub(crate) init: Option<Vec<Ident>>,
 }
 
 impl Parse for PathAttr {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        const EXPECTED_ATTRIBUTE_MESSAGE: &str = "unexpected identifier, expected any of: default";
+        const EXPECTED_ATTRIBUTE_MESSAGE: &str = "unexpected identifier, expected any of: init";
         let mut path_attr = PathAttr::default();
 
         while !input.is_empty() {
@@ -23,19 +23,19 @@ impl Parse for PathAttr {
             let attribute_name = &*ident.to_string();
 
             match attribute_name {
-                "default" => {
+                "init" => {
                     let default;
                     parenthesized!(default in input);
 
-                    path_attr.default = Some(
+                    path_attr.init = Some(
                         Punctuated::<Ident, Token![,]>::parse_terminated(&default)
                             .map(|punctuated| punctuated.into_iter().collect::<Vec<Ident>>())?,
                     );
 
-                    if path_attr.default.as_ref().unwrap().is_empty() {
+                    if path_attr.init.as_ref().unwrap().is_empty() {
                         return Err(syn::Error::new(
                             ident.span(),
-                            "expected at least one default state",
+                            "expected at least one state to initialize",
                         ));
                     }
                 }
