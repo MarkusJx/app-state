@@ -161,7 +161,7 @@ pub(crate) fn expand_stateful(input: TokenStream, args: PathAttr) -> syn::Result
                 quote! { #fn_name::<#params> }
             };
 
-            let function_name = if references_self(&item.sig.inputs) {
+            let function_name = if references_self(&item.sig.inputs) || args.log_member.is_some() {
                 quote! { Self::#function_name }
             } else {
                 function_name
@@ -209,7 +209,9 @@ pub(crate) fn expand_stateful(input: TokenStream, args: PathAttr) -> syn::Result
 
             let getter = if should_init(&args, &var_name) {
                 #[cfg(feature = "log")]
-                statements.push(log_initializing_state);
+                if args.no_log.is_none() {
+                    statements.push(log_initializing_state);
+                }
 
                 quote! { get_or_insert_default }
             } else {
@@ -218,7 +220,10 @@ pub(crate) fn expand_stateful(input: TokenStream, args: PathAttr) -> syn::Result
 
             if state_type == StateIdent::MutAppStateLock {
                 #[cfg(feature = "log")]
-                statements.push(log_injecting_state);
+                if args.no_log.is_none() {
+                    statements.push(log_injecting_state);
+                }
+
                 statements.push(syn::parse2::<syn::Stmt>(quote! {
                     let #var_name = MutAppState::<#type_name>::#getter();
                 })?);
@@ -228,7 +233,10 @@ pub(crate) fn expand_stateful(input: TokenStream, args: PathAttr) -> syn::Result
                 })?);
             } else {
                 #[cfg(feature = "log")]
-                statements.push(log_injecting_state);
+                if args.no_log.is_none() {
+                    statements.push(log_injecting_state);
+                }
+
                 statements.push(syn::parse2::<syn::Stmt>(quote! {
                     let #is_mut #var_name = #state_type_tokens::<#type_name>::#getter();
                 })?);
