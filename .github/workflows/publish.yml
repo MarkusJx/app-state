@@ -23,9 +23,28 @@ jobs:
       run: cargo build
     - name: Run tests
       run: cargo test
-    - name: publish crates
+    - name: Publish app-state-macros
       uses: katyo/publish-crates@v2
       with:
         dry-run: ${{ github.event.inputs.dry-run == 'true' }}
         registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        path: './crates/app-state'
+        args: -p app-state-macros
+    - name: Publish app-state
+      uses: katyo/publish-crates@v2
+      with:
+        dry-run: ${{ github.event.inputs.dry-run == 'true' }}
+        registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        args: -p app-state
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      if: ${{ github.event.inputs.dry-run != 'true' }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ env.version }}
+        release_name: Release v${{ env.version }}
+        body: |
+          Auto-generated release
+        draft: true
+        prerelease: false
