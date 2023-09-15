@@ -40,6 +40,9 @@ jobs:
     - name: Publish app-state (dry-run)
       if: ${{ github.event.inputs.dry-run == 'true' }}
       run: cargo publish -p app-state --dry-run
+    - name: Log out of crates.io
+      run: cargo logout
+      if: always()
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
