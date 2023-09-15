@@ -37,7 +37,7 @@ jobs:
     - name: Publish app-state
       if: ${{ github.event.inputs.dry-run != 'true' }}
       run: cargo publish -p app-state
-    - name: Publish app-state-macros (dry-run)
+    - name: Publish app-state (dry-run)
       if: ${{ github.event.inputs.dry-run == 'true' }}
       run: cargo publish -p app-state --dry-run
     - name: Create Release
