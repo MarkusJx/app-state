@@ -16,7 +16,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  publish:
 
     runs-on: ubuntu-latest
 
@@ -29,13 +29,13 @@ jobs:
     - name: Log in to crates.io
       run: cargo login ${{ secrets.CARGO_REGISTRY_TOKEN }}
     - name: Publish app-state-macros
-      if: ${{ github.event.inputs.dry-run == 'false' }}
+      if: ${{ github.event.inputs.dry-run != 'true' }}
       run: cargo publish -p app-state-macros
     - name: Publish app-state-macros (dry-run)
       if: ${{ github.event.inputs.dry-run == 'true' }}
       run: cargo publish -p app-state-macros --dry-run
     - name: Publish app-state
-      if: ${{ github.event.inputs.dry-run == 'false' }}
+      if: ${{ github.event.inputs.dry-run != 'true' }}
       run: cargo publish -p app-state
     - name: Publish app-state-macros (dry-run)
       if: ${{ github.event.inputs.dry-run == 'true' }}
