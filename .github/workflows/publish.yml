@@ -8,13 +8,16 @@ on:
         type: boolean
         required: false
         default: 'false'
+      version:
+        description: 'Version to publish'
+        required: true
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  publish:
+    permissions: write-all
     runs-on: ubuntu-latest
 
     steps:
@@ -23,10 +26,33 @@ jobs:
       run: cargo build
     - name: Run tests
       run: cargo test
-    - name: publish crates
-      uses: katyo/publish-crates@v2
+    - name: Log in to crates.io
+      run: cargo login ${{ secrets.CARGO_REGISTRY_TOKEN }}
+    - name: Publish app-state-macros
+      if: ${{ github.event.inputs.dry-run != 'true' }}
+      run: cargo publish -p app-state-macros
+    - name: Publish app-state-macros (dry-run)
+      if: ${{ github.event.inputs.dry-run == 'true' }}
+      run: cargo publish -p app-state-macros --dry-run
+    - name: Publish app-state
+      if: ${{ github.event.inputs.dry-run != 'true' }}
+      run: cargo publish -p app-state
+    - name: Publish app-state (dry-run)
+      if: ${{ github.event.inputs.dry-run == 'true' }}
+      run: cargo publish -p app-state --dry-run
+    - name: Log out of crates.io
+      run: cargo logout
+      if: always()
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      if: ${{ github.event.inputs.dry-run != 'true' }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        dry-run: ${{ github.event.inputs.dry-run == 'true' }}
-        registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        path: ./crates/app-state
-            
+        tag_name: v${{github.event.inputs.version}}
+        release_name: Release v${{github.event.inputs.version}}
+        body: |
+          Auto-generated release
+        draft: true
+        prerelease: false
