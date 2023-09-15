@@ -28,5 +28,4 @@ jobs:
       with:
         dry-run: ${{ github.event.inputs.dry-run == 'true' }}
         registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        path: ./crates/app-state
-            
+        path: './crates/app-state'
